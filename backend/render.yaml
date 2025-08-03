@@ -5,5 +5,5 @@ services:
     repo: https://github.com/PRAVEENKUMAR-V0811/Aero-Hack-Challenge/tree/main/backend
     branch: main
     buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
+    startCommand: python main.py
     plan: free
