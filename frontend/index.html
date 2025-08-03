@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3x3 Rubik's Cube Solver</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .cube-face {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            width: 100px;
+            height: 100px;
+        }
+        .sticker {
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: black;
+            user-select: none;
+        }
+        .solution-step {
+            margin-right: 8px;
+            padding: 4px 8px;
+            background-color: #e2e8f0;
+            border-radius: 4px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-center mb-8">3x3 Rubik's Cube Solver</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">Current Cube State</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                <div>
+                    <h3 class="font-medium mb-2">Visual Representation</h3>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div class="flex justify-center">
+                            <div class="cube-face" id="up-face"></div>
+                        </div>
+                        <div class="flex justify-center gap-4">
+                            <div class="cube-face" id="left-face"></div>
+                            <div class="cube-face" id="front-face"></div>
+                            <div class="cube-face" id="right-face"></div>
+                            <div class="cube-face" id="back-face"></div>
+                        </div>
+                        <div class="flex justify-center">
+                            <div class="cube-face" id="down-face"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="font-medium mb-2">Color Input</h3>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-1">White (U) Face</label>
+                            <input type="text" id="white-face" class="w-full p-2 border rounded" maxlength="9" placeholder="UUUUUUUUU" oninput="validateInput(this)" onchange="updateVisualCube()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Yellow (D) Face</label>
+                            <input type="text" id="yellow-face" class="w-full p-2 border rounded" maxlength="9" placeholder="DDDDDDDDD" oninput="validateInput(this)" onchange="updateVisualCube()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Red (F) Face</label>
+                            <input type="text" id="red-face" class="w-full p-2 border rounded" maxlength="9" placeholder="RRRRRRRRR" oninput="validateInput(this)" onchange="updateVisualCube()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Orange (B) Face</label>
+                            <input type="text" id="orange-face" class="w-full p-2 border rounded" maxlength="9" placeholder="BBBBBBBBB" oninput="validateInput(this)" onchange="updateVisualCube()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Blue (L) Face</label>
+                            <input type="text" id="blue-face" class="w-full p-2 border rounded" maxlength="9" placeholder="LLLLLLLLL" oninput="validateInput(this)" onchange="updateVisualCube()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Green (R) Face</label>
+                            <input type="text" id="green-face" class="w-full p-2 border rounded" maxlength="9" placeholder="GGGGGGGGG" oninput="validateInput(this)" onchange="updateVisualCube()">
+                        </div>
+                    </div>
+                    <button onclick="generateRandomScramble()" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 mb-4">
+                        Generate Random Scramble
+                    </button>
+                </div>
+            </div>
+            
+            <div class="flex justify-center">
+                <button onclick="solveCube()" class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 font-medium">
+                    Solve Cube
+                </button>
+            </div>
+        </div>
+        
+        <div id="solution-container" class="bg-white rounded-lg shadow-md p-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Solution</h2>
+            <div class="flex flex-wrap mb-4" id="solution-steps"></div>
+            <div id="solve-info" class="text-sm text-gray-600"></div>
+        </div>
+        
+        <div class="mt-8 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-xl font-semibold mb-4">How to Use</h2>
+            <ol class="list-decimal pl-5 space-y-2">
+                <li>Enter the current state of your cube using the standard color notation:
+                    <ul class="list-disc pl-5 mt-1">
+                        <li>U = Up (White)</li>
+                        <li>D = Down (Yellow)</li>
+                        <li>F = Front (Red)</li>
+                        <li>B = Back (Orange)</li>
+                        <li>L = Left (Blue)</li>
+                        <li>R = Right (Green)</li>
+                    </ul>
+                </li>
+                <li>Each face should have 9 characters representing the stickers (top-left to bottom-right, row by row)</li>
+                <li>Click "Solve Cube" to get the solution</li>
+                <li>Use "Generate Random Scramble" to create a random cube state to practice with</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Color mapping
+        const colorMap = {
+            'U': 'bg-white',  // White
+            'D': 'bg-yellow-300', // Yellow
+            'F': 'bg-red-500',    // Red
+            'B': 'bg-orange-400', // Orange
+            'L': 'bg-blue-500',   // Blue
+            'R': 'bg-green-500',  // Green
+            ' ': 'bg-gray-200'    // Empty
+        };
+        
+        // Initialize the visual cube
+        function initVisualCube() {
+            const faces = ['up', 'down', 'front', 'back', 'left', 'right'];
+            faces.forEach(face => {
+                const faceElement = document.getElementById(`${face}-face`);
+                for (let i = 1; i <= 9; i++) {
+                    const sticker = document.createElement('div');
+                    sticker.className = 'sticker ' + (face === 'up' ? 'bg-white' : (face === 'down' ? 'bg-yellow-300' : 
+                        face === 'front' ? 'bg-red-500' : face === 'back' ? 'bg-orange-400' : 
+                        face === 'left' ? 'bg-blue-500' : 'bg-green-500'));
+                    sticker.textContent = face === 'up' ? 'U' : face === 'down' ? 'D' : 
+                        face === 'front' ? 'F' : face === 'back' ? 'B' : 
+                        face === 'left' ? 'L' : 'R';
+                    faceElement.appendChild(sticker);
+                }
+            });
+        }
+        
+        // Update the visual cube based on input
+        function updateVisualCube() {
+            const faceInputs = {
+                'up': document.getElementById('white-face'),
+                'down': document.getElementById('yellow-face'), 
+                'front': document.getElementById('red-face'),
+                'back': document.getElementById('orange-face'),
+                'left': document.getElementById('blue-face'),
+                'right': document.getElementById('green-face')
+            };
+            
+            for (const [face, input] of Object.entries(faceInputs)) {
+                const faceElement = document.getElementById(`${face}-face`);
+                const stickers = faceElement.children;
+                const value = input.value.padEnd(9, ' ').substring(0, 9).toUpperCase();
+                
+                for (let i = 0; i < 9; i++) {
+                    const char = value[i] || ' ';
+                    stickers[i].className = `sticker ${colorMap[char] || colorMap[' ']}`;
+                    
+                    // Show the character only if it's valid and not a space
+                    if ('UDLRFB'.includes(char)) {
+                        stickers[i].textContent = char;
+                    } else {
+                        stickers[i].textContent = '';
+                    }
+                }
+            }
+        }
+        
+        // Validate input to only allow U,D,F,B,L,R
+        function validateInput(input) {
+            const validChars = /^[UDLRFBudlrfb]*$/;
+            let value = input.value.toUpperCase();
+            
+            if (!validChars.test(value)) {
+                value = value.replace(/[^UDLRFB]/g, '');
+                input.value = value;
+            }
+            
+            updateVisualCube();
+        }
+        
+        // Generate a random scramble
+        function generateRandomScramble() {
+            const scrambledCubes = [
+                "DRURUFBBDBDFRRLUFDRULLFUURLLDFUDLRFRLBUDLBDLBRFFDBBFUB",
+                "BBULUURFFLRRDRFULBFUUDFFDFBLRLRDUDBRLDUBLBRDFBLDLBRDUF",
+                "BDFFUULRFRLRLRUBRDUDDBFBUFULDRFDBRLFLUFULDDRBULDBBRLFB",
+                "RUFFULUDLDUUBRRFRBLBBLFRUULBFDLDFFURDDBLLDRFRLBFDBBDRU",
+                "RDLRUFLRDRUDLRLLBLUFBLFFUBURRBFDUUDBDUFBLBRDFFLFUBDDRB",
+                "UDUFUDFBDRLRLRFFDUURBRFULRDDFRUDBDLLLDRULUFFBBRBLBBFBL",
+                "BLFFUDRURUFRDRRRRFDBBUFLURDLDBFDFFULLLFDLRUUBUBDBBBDLL",
+                "BFLFURFBUBBFBRLDRURLRRFULUFDFLDDULLFDDDFLDUBBULRDBRRUB",
+                "FDUUUDRFFRFFLRLLFFBUDRFBLBBBRDRDRUULLBDFLDRUURBUDBLDLB",
+                "DFUFULBRLFBLBRURFBLBDDFDRDBFLURDRLURFDDULRUUUFLRBBFDLB",
+                "FBDFUDDFLDLBRRDFDLLLBLFUBBDRURUDFFRUURFRLUUFURLRBBBBDL",
+                "BLFFUDRURUFRDRRRRFDBBUFLURDLDBFDFFULLLFDLRUUBUBDBBBDLL",
+            ];
+
+            const faces = ['U', 'R', 'F', 'D', 'L', 'B'];
+            const faceElements = {
+                'U': document.getElementById('white-face'),
+                'R': document.getElementById('green-face'),
+                'F': document.getElementById('red-face'),
+                'D': document.getElementById('yellow-face'),
+                'L': document.getElementById('blue-face'),
+                'B': document.getElementById('orange-face')
+            };
+
+            const randomIndex = Math.floor(Math.random() * scrambledCubes.length);
+            const scramble = scrambledCubes[randomIndex];
+
+            if (scramble.length !== 54) {
+                alert('Invalid scramble selected. Length must be exactly 54 characters.');
+                return;
+            }
+
+            // Update face elements with 9 characters each
+            let offset = 0;
+            faces.forEach(face => {
+                faceElements[face].value = scramble.substring(offset, offset + 9);
+                offset += 9;
+            });
+
+            updateVisualCube();
+        }
+
+        
+        // Solve the cube using the human-like algorithm
+        // Solve the cube by sending the cube string to the Python backend
+    function solveCube() {
+        const faceInputs = {
+            'U': document.getElementById('white-face').value.toUpperCase().padEnd(9, 'U').substring(0, 9),
+            'D': document.getElementById('yellow-face').value.toUpperCase().padEnd(9, 'D').substring(0, 9),
+            'F': document.getElementById('red-face').value.toUpperCase().padEnd(9, 'F').substring(0, 9),
+            'B': document.getElementById('orange-face').value.toUpperCase().padEnd(9, 'B').substring(0, 9),
+            'L': document.getElementById('blue-face').value.toUpperCase().padEnd(9, 'L').substring(0, 9),
+            'R': document.getElementById('green-face').value.toUpperCase().padEnd(9, 'R').substring(0, 9)
+        };
+
+        // Validate input
+        for (const [face, value] of Object.entries(faceInputs)) {
+            if (value.length !== 9 || !/^[UDLRFB]+$/.test(value)) {
+                alert(`Please enter exactly 9 valid characters (U, D, F, B, L, R) for the ${face} face`);
+                return;
+            }
+        }
+
+        // Combine into a cube string in Kociemba order: URFDLB
+        const cubeString = 
+            faceInputs['U'] + faceInputs['R'] + faceInputs['F'] +
+            faceInputs['D'] + faceInputs['L'] + faceInputs['B'];
+
+        // Show loading
+        const stepsContainer = document.getElementById('solution-steps');
+        document.getElementById('solution-container').classList.remove('hidden');
+        stepsContainer.innerHTML = '<div class="animate-pulse">Solving... Please wait...</div>';
+        document.getElementById('solve-info').textContent = '';
+
+        // Send to backend
+        fetch('http://localhost:5000/solve-cube', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cube: cubeString })
+        })
+        .then(res => res.json())
+        .then(data => {
+            const solution = data.solution || 'No solution returned';
+            const steps = solution.split(' ');
+
+            // Display solution steps
+            stepsContainer.innerHTML = '';
+            steps.forEach(move => {
+                const stepElement = document.createElement('div');
+                stepElement.className = 'solution-step';
+                stepElement.textContent = move;
+                stepsContainer.appendChild(stepElement);
+            });
+
+            document.getElementById('solve-info').textContent = 
+                `Solution found with ${steps.length} moves.`;
+        })
+        .catch(err => {
+            console.error(err);
+            stepsContainer.innerHTML = '<div class="text-red-500">Failed to get solution from server.</div>';
+        });
+    }
+
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            initVisualCube();
+        });
+    </script>
+</body>
+</html>
