@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: rubik-backend
+    runtime: python
+    repo: https://github.com/PRAVEENKUMAR-V0811/Aero-Hack-Challenge/tree/main/backend
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    plan: free
