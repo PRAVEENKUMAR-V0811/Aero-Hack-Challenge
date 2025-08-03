@@ -276,7 +276,7 @@
         document.getElementById('solve-info').textContent = '';
 
         // Send to backend
-        fetch('http://localhost:5000/solve-cube', {
+        fetch('https://aero-hack-challenge.onrender.com', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ cube: cubeString })
